@@ -1,0 +1,27 @@
+{
+  "object2": {
+    "name": "Object 2"
+  },
+  "object1": {
+    "name": "Object 1"
+  },
+  "list": [
+    {
+      "name": "Object 1"
+    },
+    {
+      "name": "Object 2"
+    }
+  ],
+  "My Name": "Some object name",
+  "version": 5,
+  "map": {
+    "wow": {
+      "this": {
+        "is": {
+          "cool": true
+        }
+      }
+    }
+  }
+}
