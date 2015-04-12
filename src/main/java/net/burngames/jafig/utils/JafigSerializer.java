@@ -115,7 +115,12 @@ public class JafigSerializer {
             throw new NullPointerException("Object must not be null");
         }
         if (value instanceof SerializedPrimitive) {
-            return ((SerializedPrimitive) value).getValue();
+            Object returning = ((SerializedPrimitive) value).getValue();
+            if (Primitives.unwrap(currentField.getType()) == float.class) {
+                Double d = (Double) returning;
+                return d.floatValue();
+            }
+            return returning;
         } else if (value instanceof SerializedArray) {
             SerializedValue[] values = ((SerializedArray) value).getValues();
             Object[] objects = new Object[values.length];
