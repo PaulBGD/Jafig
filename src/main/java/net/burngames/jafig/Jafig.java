@@ -29,7 +29,6 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  * Represents a Jafig object.
- * <p/>
  * As well, has a static method to
  * create a new Jafig object.
  *

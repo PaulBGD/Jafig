@@ -72,6 +72,7 @@ public final class Primitives {
      * is a member of this set is to call {@link Class#isPrimitive}.
      *
      * @since 3.0
+     * @return allPrimitiveTypes
      */
     public static Set<Class<?>> allPrimitiveTypes() {
         return PRIMITIVE_TO_WRAPPER_TYPE.keySet();
@@ -82,6 +83,7 @@ public final class Primitives {
      * {@link Void}).
      *
      * @since 3.0
+     * @return allWrapperTypes
      */
     public static Set<Class<?>> allWrapperTypes() {
         return WRAPPER_TO_PRIMITIVE_TYPE.keySet();
@@ -92,6 +94,9 @@ public final class Primitives {
      * primitive-wrapper types, such as {@link Integer}.
      *
      * @see Class#isPrimitive
+     *
+     * @param type the type
+     * @return true if the type is a wrapper
      */
     public static boolean isWrapperType(Class<?> type) {
         return WRAPPER_TO_PRIMITIVE_TYPE.containsKey(type);
@@ -105,6 +110,10 @@ public final class Primitives {
      *     wrap(Integer.class) == Integer.class
      *     wrap(String.class) == String.class
      * </pre>
+     *
+     * @param type the type
+     * @param <T> the type
+     * @return the wrapped type
      */
     public static <T> Class<T> wrap(Class<T> type) {
         // cast is safe: long.class and Long.class are both of type Class<Long>
@@ -121,6 +130,10 @@ public final class Primitives {
      *     unwrap(int.class) == int.class
      *     unwrap(String.class) == String.class
      * </pre>
+     *
+     * @param type the type
+     * @param <T> the type
+     * @return the unwrapped type
      */
     public static <T> Class<T> unwrap(Class<T> type) {
         // cast is safe: long.class and Long.class are both of type Class<Long>
