@@ -38,6 +38,9 @@ public class JafigType {
     public static final Class<? extends Jafig> YAML = JafigYAML.class;
     public static final Class<? extends Jafig> JSON = JafigJSON.class;
 
+    // MySQL
+    public static final Class<? extends Jafig> MYSQL = JafigMySQL.class;
+
     // Binary
     public static final Class<? extends Jafig> BINARY_ORIGINAL = JafigBinary.class;
 
