@@ -27,7 +27,7 @@ import java.util.Set;
  * @author Kevin Bourrillion
  * @since 1.0
  */
-public final class Primitives {
+public final class  Primitives {
     /**
      * A map from primitive types to their corresponding wrapper types.
      */

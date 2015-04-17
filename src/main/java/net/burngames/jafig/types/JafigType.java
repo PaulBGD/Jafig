@@ -34,7 +34,13 @@ import net.burngames.jafig.Jafig;
  */
 public class JafigType {
 
+    // Flat file
     public static final Class<? extends Jafig> YAML = JafigYAML.class;
     public static final Class<? extends Jafig> JSON = JafigJSON.class;
 
+    // Binary
+    public static final Class<? extends Jafig> BINARY_ORIGINAL = JafigBinary.class;
+
+    // Misc
+    public static final Class<JafigObject> OBJECT = JafigObject.class;
 }

@@ -25,7 +25,10 @@
 
 package net.burngames.jafig;
 
+import net.burngames.jafig.types.JafigObject;
+
 import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Logger;
 
 /**
  * Represents a Jafig object.
@@ -36,33 +39,19 @@ import java.lang.reflect.InvocationTargetException;
  */
 public abstract class Jafig {
 
+    protected static final Logger logger = Logger.getLogger("Jafig");
+
     public Jafig(Object[] parameters) {
 
     }
 
-    public static Jafig create(Class<? extends Jafig> jafig, Object... parameters) {
+    public static <T extends Jafig> T create(Class<T> jafig, Object... parameters) {
         try {
             return jafig.getConstructor(Object[].class).newInstance(new Object[]{parameters});
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
+        } catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        return new Jafig(parameters) {
-            @Override
-            public <T> T load(Class<T> clazz) {
-                return null;
-            }
-
-            @Override
-            public void save(Object object) {
-
-            }
-        };
+        return (T) new JafigObject(null);
     }
 
     public abstract <T> T load(Class<T> clazz);

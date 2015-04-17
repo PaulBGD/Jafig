@@ -116,7 +116,7 @@ public class JafigSerializer {
         }
         if (value instanceof SerializedPrimitive) {
             Object returning = ((SerializedPrimitive) value).getValue();
-            if (Primitives.unwrap(currentField.getType()) == float.class) {
+            if (Primitives.unwrap(currentField.getType()) == float.class && returning instanceof Double) {
                 Double d = (Double) returning;
                 return d.floatValue();
             }
