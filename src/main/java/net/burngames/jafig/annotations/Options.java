@@ -41,5 +41,6 @@ public @interface Options {
     String name() default "";
 
     Class<?> listType() default Options.class;
+    Class<?> mapType() default Options.class;
 
 }

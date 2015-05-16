@@ -32,10 +32,7 @@ import net.burngames.jafig.annotations.Options;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Internal functions for representing data
@@ -174,6 +171,17 @@ public class JafigSerializer {
                 throw new IllegalArgumentException("Primitive value cannot be object");
             }
             SerializedJafig jafig = (SerializedJafig) value;
+            if (Map.class.isAssignableFrom(clazz)) {
+                Options options = currentField.getAnnotation(Options.class);
+                if (options == null || options.mapType() == Options.class) {
+                    throw new IllegalArgumentException("Maps must be using the Options annotation with the mapType set. Invalid: ");
+                }
+                Map map = new HashMap(jafig.child.size());
+                for (Map.Entry<String, SerializedValue> entry : jafig.child.entrySet()) {
+                    map.put(entry.getKey(), deserialize(entry.getValue(), options.mapType(), currentField));
+                }
+                return map;
+            }
             Object newObject = null;
             try {
                 newObject = clazz.newInstance();
