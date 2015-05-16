@@ -37,6 +37,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidParameterException;
+import java.util.Map;
 
 /**
  * Handles the Jafig interface for JSON files.
