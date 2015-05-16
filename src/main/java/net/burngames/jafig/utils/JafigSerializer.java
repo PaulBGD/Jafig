@@ -42,7 +42,13 @@ import java.util.Map;
  */
 public class JafigSerializer {
 
+    private static final int maxDepth = 50;
+    private static int depth = 0;
+
     public static SerializedValue serialize(Object value) {
+        if (++depth >= maxDepth) {
+            throw new Error("Object has too large of depth");
+        }
         if (value == null) {
             // nothing to do here
             return new SerializedPrimitive(null);
@@ -82,6 +88,7 @@ public class JafigSerializer {
         } else if (Primitives.allPrimitiveTypes().contains(valueClass) || value instanceof String) { // it's a primitive, good to go!
             return new SerializedPrimitive(value);
         } else {
+            depth = 0;
             // we have to go deeper! into the class it is
             HashMap<String, SerializedValue> serialized = new HashMap<String, SerializedValue>();
             boolean discarded = valueClass.getAnnotation(Discard.class) != null; // class is discarded
@@ -104,6 +111,7 @@ public class JafigSerializer {
                     e.printStackTrace();
                 }
             }
+            depth = 0;
             return new SerializedJafig(serialized);
         }
     }
