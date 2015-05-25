@@ -1,7 +1,9 @@
 package net.burngames.jafig.types;
 
 import net.burngames.jafig.Jafig;
-import net.burngames.jafig.utils.JafigSerializer;
+import net.burngames.jafig.serialize.SerializeUtil;
+import net.burngames.jafig.serialize.types.SerializedJafig;
+import net.burngames.jafig.serialize.types.SerializedValue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,11 +26,11 @@ public class JafigObject extends Jafig {
 
     @Override
     public void save(Object object) {
-        JafigSerializer.SerializedValue value = JafigSerializer.serialize(object);
-        if (!(value instanceof JafigSerializer.SerializedJafig)) {
-            throw new IllegalArgumentException("Object must be an object");
+        SerializedValue value = SerializeUtil.serialize(object);
+        if (!(value instanceof SerializedJafig)) {
+            throw new IllegalArgumentException("Object must be a SerializedJafig");
         }
-        JafigSerializer.SerializedJafig serialized = (JafigSerializer.SerializedJafig) value;
+        SerializedJafig serialized = (SerializedJafig) value;
         this.data = serialized.toBasic();
     }
 

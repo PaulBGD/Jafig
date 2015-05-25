@@ -25,6 +25,8 @@
 
 package net.burngames.jafig;
 
+import net.burngames.jafig.serialize.JafigSerializer;
+import net.burngames.jafig.serialize.SerializeUtil;
 import net.burngames.jafig.types.JafigObject;
 
 import java.lang.reflect.InvocationTargetException;
@@ -45,6 +47,14 @@ public abstract class Jafig {
 
     }
 
+    /**
+     * Creates a new Jafig object with the specified parameters
+     *
+     * @param jafig the type of Jafig to create
+     * @param parameters the parameters to pass
+     * @param <T> the type of Jafig
+     * @return a new Jafig
+     */
     public static <T extends Jafig> T create(Class<T> jafig, Object... parameters) {
         try {
             return jafig.getConstructor(Object[].class).newInstance(new Object[]{parameters});
@@ -52,6 +62,10 @@ public abstract class Jafig {
             e.printStackTrace();
         }
         return (T) new JafigObject(null);
+    }
+
+    public static void addSerializer(JafigSerializer serializer) {
+        SerializeUtil.addSerializer(serializer);
     }
 
     public abstract <T> T load(Class<T> clazz);

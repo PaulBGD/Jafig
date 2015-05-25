@@ -23,11 +23,13 @@
  *
  */
 
-package net.burngames.jafig.utils;
+package net.burngames.jafig.serialize;
 
 import net.burngames.jafig.annotations.Accept;
 import net.burngames.jafig.annotations.Discard;
 import net.burngames.jafig.annotations.Options;
+import net.burngames.jafig.serialize.types.*;
+import net.burngames.jafig.utils.Primitives;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -39,7 +41,9 @@ import java.util.*;
  *
  * @author PaulBGD
  */
-public class JafigSerializer {
+public class SerializeUtil {
+
+    private static final HashMap<Class, JafigSerializer> serializers = new HashMap<Class, JafigSerializer>();
 
     public static SerializedValue serialize(Object value) {
         return serialize(value, null);
@@ -49,82 +53,94 @@ public class JafigSerializer {
         if (value == null) {
             // nothing to do here
             return new SerializedPrimitive(null);
+        }
+
+        Class<?> theClass;
+        if (currentField == null) {
+            theClass = value.getClass();
+        } else {
+            theClass = currentField.getType();
+        }
+
+        if (serializers.containsKey(theClass)) {
+            return serializers.get(theClass).serialize(value, currentField);
         } else if (value instanceof Class) {
             throw new IllegalArgumentException("Classes cannot be serialized");
-        }
-        if (value instanceof BigDecimal) {
-            if (currentField == null) {
-                value = ((BigDecimal) value).floatValue();
-            } else {
-                Class<?> currentClass = Primitives.unwrap(currentField.getClass());
-                if (currentClass == float.class) {
-                    value = ((BigDecimal) value).floatValue();
-                } else if (currentClass == double.class) {
-                    value = ((BigDecimal) value).doubleValue();
-                }
-            }
-        }
-        Class<?> valueClass = value.getClass();
-        if (Primitives.isWrapperType(valueClass)) {
-            valueClass = Primitives.unwrap(valueClass); // unwrap
-        }
-        if (valueClass.isArray()) {
-            Object[] array = (Object[]) value;
-            SerializedValue[] values = new SerializedValue[array.length];
-            for (int i = 0, arrayLength = array.length; i < arrayLength; i++) {
-                values[i] = serialize(array[i], currentField);
-            }
-            return new SerializedArray(values);
-        } else if (value instanceof List) {
-            List list = (List) value;
-            List<SerializedValue> values = new ArrayList<SerializedValue>(list.size());
-            for (Object aList : list) {
-                values.add(serialize(aList, currentField));
-            }
-            return new SerializedList(values);
-        } else if (value instanceof Map) {
-            // maps are tricky, in that we have to use a string-key format
-            Map map = (Map) value;
-            HashMap<String, SerializedValue> values = new HashMap<String, SerializedValue>(map.size());
-            for (Object mapEntry : map.entrySet()) {
-                Map.Entry entry = (Map.Entry) mapEntry;
-                if (!(entry.getKey() instanceof String)) {
-                    throw new IllegalArgumentException("Maps must contain string typed keys");
-                }
-                values.put((String) entry.getKey(), serialize(entry.getValue(), currentField));
-            }
-            return new SerializedJafig(values);
-        } else if (Primitives.allPrimitiveTypes().contains(valueClass) || value instanceof String) { // it's a primitive, good to go!
-            return new SerializedPrimitive(value);
         } else {
-            // we have to go deeper! into the class it is
-            HashMap<String, SerializedValue> serialized = new HashMap<String, SerializedValue>();
-            boolean discarded = valueClass.getAnnotation(Discard.class) != null; // class is discarded
-            for (Field field : valueClass.getFields()) {
-                if (Modifier.isStatic(field.getModifiers()) || !Modifier.isPublic(field.getModifiers()) || field.getAnnotation(Discard.class) != null || (discarded && field.getAnnotation(Accept.class) == null)) {
-                    continue; // discarded field
-                }
-                String name = field.getName();
-                Options options = field.getAnnotation(Options.class);
-                if (options != null) {
-                    if (!options.name().equals("")) {
-                        name = options.name(); // they specified a name for this field
+            if (value instanceof BigDecimal) {
+                if (currentField == null) {
+                    value = ((BigDecimal) value).floatValue();
+                } else {
+                    Class<?> currentClass = Primitives.unwrap(currentField.getClass());
+                    if (currentClass == float.class) {
+                        value = ((BigDecimal) value).floatValue();
+                    } else if (currentClass == double.class) {
+                        value = ((BigDecimal) value).doubleValue();
                     }
-                }
-                try {
-                    Object object = field.get(value);
-                    SerializedValue returned;
-                    try {
-                        returned = serialize(object, field);
-                    } catch (StackOverflowError error) {
-                        throw new Error("Field: " + field.getName() + " Class: " + valueClass.getName());
-                    }
-                    serialized.put(name, returned);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
                 }
             }
-            return new SerializedJafig(serialized);
+            Class<?> valueClass = value.getClass();
+            if (Primitives.isWrapperType(valueClass)) {
+                valueClass = Primitives.unwrap(valueClass); // unwrap
+            }
+            if (valueClass.isArray()) {
+                Object[] array = (Object[]) value;
+                SerializedValue[] values = new SerializedValue[array.length];
+                for (int i = 0, arrayLength = array.length; i < arrayLength; i++) {
+                    values[i] = serialize(array[i], currentField);
+                }
+                return new SerializedArray(values);
+            } else if (value instanceof List) {
+                List list = (List) value;
+                List<SerializedValue> values = new ArrayList<SerializedValue>(list.size());
+                for (Object aList : list) {
+                    values.add(serialize(aList, currentField));
+                }
+                return new SerializedList(values);
+            } else if (value instanceof Map) {
+                // maps are tricky, in that we have to use a string-key format
+                Map map = (Map) value;
+                HashMap<String, SerializedValue> values = new HashMap<String, SerializedValue>(map.size());
+                for (Object mapEntry : map.entrySet()) {
+                    Map.Entry entry = (Map.Entry) mapEntry;
+                    if (!(entry.getKey() instanceof String)) {
+                        throw new IllegalArgumentException("Maps must contain string typed keys");
+                    }
+                    values.put((String) entry.getKey(), serialize(entry.getValue(), currentField));
+                }
+                return new SerializedJafig(values);
+            } else if (Primitives.allPrimitiveTypes().contains(valueClass) || value instanceof String) { // it's a primitive, good to go!
+                return new SerializedPrimitive(value);
+            } else {
+                // we have to go deeper! into the class it is
+                HashMap<String, SerializedValue> serialized = new HashMap<String, SerializedValue>();
+                boolean discarded = valueClass.getAnnotation(Discard.class) != null; // class is discarded
+                for (Field field : valueClass.getFields()) {
+                    if (Modifier.isStatic(field.getModifiers()) || !Modifier.isPublic(field.getModifiers()) || field.getAnnotation(Discard.class) != null || (discarded && field.getAnnotation(Accept.class) == null)) {
+                        continue; // discarded field
+                    }
+                    String name = field.getName();
+                    Options options = field.getAnnotation(Options.class);
+                    if (options != null) {
+                        if (!options.name().equals("")) {
+                            name = options.name(); // they specified a name for this field
+                        }
+                    }
+                    try {
+                        Object object = field.get(value);
+                        SerializedValue returned;
+                        try {
+                            returned = serialize(object, field);
+                        } catch (StackOverflowError error) {
+                            throw new Error("Field: " + field.getName() + " Class: " + valueClass.getName());
+                        }
+                        serialized.put(name, returned);
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return new SerializedJafig(serialized);
+            }
         }
     }
 
@@ -133,6 +149,9 @@ public class JafigSerializer {
             throw new NullPointerException("Data must not be null");
         } else if (clazz == null) {
             throw new NullPointerException("Object must not be null");
+        }
+        if (serializers.containsKey(clazz)) {
+            return serializers.get(clazz).deserialize(value, currentField);
         }
         if (value instanceof SerializedPrimitive) {
             Object returning = ((SerializedPrimitive) value).getValue();
@@ -176,8 +195,8 @@ public class JafigSerializer {
                 if (options == null || options.mapType() == Options.class) {
                     throw new IllegalArgumentException("Maps must be using the Options annotation with the mapType set. Invalid: ");
                 }
-                Map map = new HashMap(jafig.child.size());
-                for (Map.Entry<String, SerializedValue> entry : jafig.child.entrySet()) {
+                Map map = new HashMap(jafig.getChildren().size());
+                for (Map.Entry<String, SerializedValue> entry : jafig.getChildren().entrySet()) {
                     map.put(entry.getKey(), deserialize(entry.getValue(), options.mapType(), currentField));
                 }
                 return map;
@@ -213,88 +232,8 @@ public class JafigSerializer {
         }
     }
 
-    public static abstract class SerializedValue {
-        public abstract Object toBasic();
-    }
-
-    public static class SerializedPrimitive extends SerializedValue {
-        private final Object value;
-
-        public SerializedPrimitive(Object value) {
-            this.value = value;
-        }
-
-        public Object getValue() {
-            return value;
-        }
-
-        @Override
-        public Object toBasic() {
-            return getValue();
-        }
-    }
-
-    public static class SerializedArray extends SerializedValue {
-        private final SerializedValue[] values;
-
-        public SerializedArray(SerializedValue[] values) {
-            this.values = values;
-        }
-
-        public SerializedValue[] getValues() {
-            return values;
-        }
-
-        @Override
-        public Object toBasic() {
-            Object[] objects = new Object[this.values.length];
-            for (int i = 0, valuesLength = values.length; i < valuesLength; i++) {
-                objects[i] = this.values[i].toBasic();
-            }
-            return objects;
-        }
-    }
-
-    public static class SerializedList extends SerializedValue {
-        private final List<SerializedValue> values;
-
-        public SerializedList(List<SerializedValue> values) {
-            this.values = values;
-        }
-
-        public List<SerializedValue> getValues() {
-            return values;
-        }
-
-        @Override
-        public Object toBasic() {
-            List<Object> objects = new ArrayList<Object>(this.values.size());
-            for (SerializedValue value : values) {
-                objects.add(value.toBasic());
-            }
-            return objects;
-        }
-    }
-
-    public static class SerializedJafig extends SerializedValue {
-        private final HashMap<String, SerializedValue> child;
-
-        public SerializedJafig(HashMap<String, SerializedValue> child) {
-            this.child = child;
-        }
-
-        public HashMap<String, SerializedValue> getChildren() {
-            return child;
-        }
-
-        @Override
-        public Map<String, Object> toBasic() {
-            HashMap<String, Object> objects = new HashMap<String, Object>(this.child.size());
-            for (Map.Entry<String, SerializedValue> entry : child.entrySet()) {
-                objects.put(entry.getKey(), entry.getValue().toBasic());
-            }
-            return objects;
-        }
+    public static void addSerializer(JafigSerializer serializer) {
+        serializers.put(serializer.getTClass(), serializer);
     }
 
 }

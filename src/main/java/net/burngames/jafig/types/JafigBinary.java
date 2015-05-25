@@ -1,7 +1,8 @@
 package net.burngames.jafig.types;
 
 import net.burngames.jafig.Jafig;
-import net.burngames.jafig.utils.JafigSerializer;
+import net.burngames.jafig.serialize.SerializeUtil;
+import net.burngames.jafig.serialize.types.*;
 import net.burngames.jafig.utils.OutputInputStream;
 import net.burngames.jafig.utils.Primitives;
 
@@ -58,23 +59,23 @@ public class JafigBinary extends Jafig {
 
     @Override
     public <T> T load(Class<T> clazz) {
-        JafigSerializer.SerializedJafig data;
+        SerializedJafig data;
         try {
-            data = (JafigSerializer.SerializedJafig) readValue(this.stream.read(), new AtomicInteger());
+            data = (SerializedJafig) readValue(this.stream.read(), new AtomicInteger());
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to read binary file", e);
-            data = new JafigSerializer.SerializedJafig(new HashMap<String, JafigSerializer.SerializedValue>());
+            data = new SerializedJafig(new HashMap<String, SerializedValue>());
         }
-        return (T) JafigSerializer.deserialize(data, clazz, null);
+        return (T) SerializeUtil.deserialize(data, clazz, null);
     }
 
     @Override
     public void save(Object object) {
-        JafigSerializer.SerializedValue value = JafigSerializer.serialize(object);
-        if (!(value instanceof JafigSerializer.SerializedJafig)) {
+        SerializedValue value = SerializeUtil.serialize(object);
+        if (!(value instanceof SerializedJafig)) {
             throw new IllegalArgumentException("Object must be an object");
         }
-        JafigSerializer.SerializedJafig serialized = (JafigSerializer.SerializedJafig) value;
+        SerializedJafig serialized = (SerializedJafig) value;
         try {
             writeValue(serialized);
         } catch (IOException e) {
@@ -82,58 +83,58 @@ public class JafigBinary extends Jafig {
         }
     }
 
-    private JafigSerializer.SerializedValue readValue(byte[] bytes, AtomicInteger offset) throws Exception {
-        JafigSerializer.SerializedValue value;
+    private SerializedValue readValue(byte[] bytes, AtomicInteger offset) throws Exception {
+        SerializedValue value;
         byte b = bytes[offset.getAndAdd(1)];
         Class<?> type = byteToClass(b);
         if (type == String.class) {
-            value = new JafigSerializer.SerializedPrimitive(readString(bytes, offset));
+            value = new SerializedPrimitive(readString(bytes, offset));
         } else if (type == int.class) {
-            value = new JafigSerializer.SerializedPrimitive(readInt(bytes, offset));
+            value = new SerializedPrimitive(readInt(bytes, offset));
         } else if (type == boolean.class) {
-            value = new JafigSerializer.SerializedPrimitive(readBoolean(bytes, offset));
+            value = new SerializedPrimitive(readBoolean(bytes, offset));
         } else if (type == char.class) {
-            value = new JafigSerializer.SerializedPrimitive(readChar(bytes, offset));
+            value = new SerializedPrimitive(readChar(bytes, offset));
         } else if (type == long.class) {
-            value = new JafigSerializer.SerializedPrimitive(readLong(bytes, offset));
+            value = new SerializedPrimitive(readLong(bytes, offset));
         } else if (type == double.class) {
-            value = new JafigSerializer.SerializedPrimitive(readDouble(bytes, offset));
+            value = new SerializedPrimitive(readDouble(bytes, offset));
         } else if (type == float.class) {
-            value = new JafigSerializer.SerializedPrimitive(Float.intBitsToFloat(readInt(bytes, offset)));
+            value = new SerializedPrimitive(Float.intBitsToFloat(readInt(bytes, offset)));
         } else if (type == short.class) {
-            value = new JafigSerializer.SerializedPrimitive(readShort(bytes, offset));
+            value = new SerializedPrimitive(readShort(bytes, offset));
         } else if (type == Array.class) {
             int length = readInt(bytes, offset);
-            JafigSerializer.SerializedValue[] array = new JafigSerializer.SerializedValue[length];
+            SerializedValue[] array = new SerializedValue[length];
             while (length-- != 0) {
                 array[length] = readValue(bytes, offset);
             }
-            value = new JafigSerializer.SerializedArray(array);
+            value = new SerializedArray(array);
         } else if (type == List.class) {
             int length = readInt(bytes, offset);
-            List<JafigSerializer.SerializedValue> list = new ArrayList<>(length);
+            List<SerializedValue> list = new ArrayList<>(length);
             while (length-- != 0) {
                 list.add(readValue(bytes, offset));
             }
-            value = new JafigSerializer.SerializedList(list);
+            value = new SerializedList(list);
         } else if (type == Object.class) {
-            HashMap<String, JafigSerializer.SerializedValue> map = new HashMap<>();
+            HashMap<String, SerializedValue> map = new HashMap<>();
             int length = readInt(bytes, offset);
             while (length-- != 0) {
                 String header = readString(bytes, offset);
-                JafigSerializer.SerializedValue objectValue = readValue(bytes, offset);
+                SerializedValue objectValue = readValue(bytes, offset);
                 map.put(header, objectValue);
             }
-            value = new JafigSerializer.SerializedJafig(map);
+            value = new SerializedJafig(map);
         } else {
             throw new IllegalArgumentException("Invalid type found: " + (int) b + " (" + type + ") o: " + offset.get());
         }
         return value;
     }
 
-    private void writeValue(JafigSerializer.SerializedValue object) throws IOException {
-        if (object instanceof JafigSerializer.SerializedPrimitive) {
-            JafigSerializer.SerializedPrimitive primitive = (JafigSerializer.SerializedPrimitive) object;
+    private void writeValue(SerializedValue object) throws IOException {
+        if (object instanceof SerializedPrimitive) {
+            SerializedPrimitive primitive = (SerializedPrimitive) object;
             Object value = primitive.getValue();
             if (value instanceof String) {
                 this.stream.write(new byte[] {classToByte(value.getClass())});
@@ -162,28 +163,28 @@ public class JafigBinary extends Jafig {
             } else {
                 throw new IllegalArgumentException("Invalid object '" + value + "' " + (value != null ? value.getClass() : ""));
             }
-        } else if (object instanceof JafigSerializer.SerializedArray) {
-            JafigSerializer.SerializedArray array = (JafigSerializer.SerializedArray) object;
-            JafigSerializer.SerializedValue[] values = array.getValues();
+        } else if (object instanceof SerializedArray) {
+            SerializedArray array = (SerializedArray) object;
+            SerializedValue[] values = array.getValues();
             this.stream.write(new byte[] {classToByte(array.getClass())});
             writeInt(values.length);
-            for (JafigSerializer.SerializedValue value : values) {
+            for (SerializedValue value : values) {
                 writeValue(value);
             }
-        } else if (object instanceof JafigSerializer.SerializedList) {
-            JafigSerializer.SerializedList list = (JafigSerializer.SerializedList) object;
-            List<JafigSerializer.SerializedValue> values = list.getValues();
+        } else if (object instanceof SerializedList) {
+            SerializedList list = (SerializedList) object;
+            List<SerializedValue> values = list.getValues();
             this.stream.write(new byte[] {classToByte(values.getClass())});
             writeInt(values.size());
-            for (JafigSerializer.SerializedValue value : values) {
+            for (SerializedValue value : values) {
                 writeValue(value);
             }
-        } else if (object instanceof JafigSerializer.SerializedJafig) {
-            JafigSerializer.SerializedJafig jafig = (JafigSerializer.SerializedJafig) object;
-            HashMap<String, JafigSerializer.SerializedValue> children = jafig.getChildren();
+        } else if (object instanceof SerializedJafig) {
+            SerializedJafig jafig = (SerializedJafig) object;
+            HashMap<String, SerializedValue> children = jafig.getChildren();
             this.stream.write(new byte[] {classToByte(children.getClass())});
             writeInt(children.size());
-            for (Map.Entry<String, JafigSerializer.SerializedValue> entry : children.entrySet()) {
+            for (Map.Entry<String, SerializedValue> entry : children.entrySet()) {
                 writeString(entry.getKey());
                 writeValue(entry.getValue());
             }

@@ -26,7 +26,9 @@
 package net.burngames.jafig.types;
 
 import net.burngames.jafig.Jafig;
-import net.burngames.jafig.utils.JafigSerializer;
+import net.burngames.jafig.serialize.SerializeUtil;
+import net.burngames.jafig.serialize.types.SerializedJafig;
+import net.burngames.jafig.serialize.types.SerializedValue;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -83,16 +85,16 @@ public class JafigYAML extends Jafig {
 
     @Override
     public <T> T load(Class<T> clazz) {
-        return (T) JafigSerializer.deserialize(JafigSerializer.serialize(this.data), clazz, null);
+        return (T) SerializeUtil.deserialize(SerializeUtil.serialize(this.data), clazz, null);
     }
 
     @Override
     public void save(Object object) {
-        JafigSerializer.SerializedValue value = JafigSerializer.serialize(object);
-        if (!(value instanceof JafigSerializer.SerializedJafig)) {
-            throw new IllegalArgumentException("Object must be an object");
+        SerializedValue value = SerializeUtil.serialize(object);
+        if (!(value instanceof SerializedJafig)) {
+            throw new IllegalArgumentException("Object must be a SerializedConfig");
         }
-        JafigSerializer.SerializedJafig serialized = (JafigSerializer.SerializedJafig) value;
+        SerializedJafig serialized = (SerializedJafig) value;
         this.data.putAll(serialized.toBasic());
         String data = yaml.dump(this.data);
         try {
