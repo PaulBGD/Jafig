@@ -35,13 +35,19 @@ import java.lang.reflect.Field;
 public abstract class JafigSerializer<T> {
 
     private final Class<T> tClass;
+    private final Class<? extends T>[] others;
 
-    public JafigSerializer(Class<T> tClass) {
+    public JafigSerializer(Class<T> tClass, Class<? extends T>... others) {
         this.tClass = tClass;
+        this.others = others;
     }
 
     public Class<T> getTClass() {
         return tClass;
+    }
+
+    public Class<? extends T>[] getOthers() {
+        return others;
     }
 
     public abstract SerializedValue serialize(T t, Field field);

@@ -234,6 +234,9 @@ public class SerializeUtil {
 
     public static void addSerializer(JafigSerializer serializer) {
         serializers.put(serializer.getTClass(), serializer);
+        for (Class other : serializer.getOthers()) {
+            serializers.put(other, serializer);
+        }
     }
 
 }
