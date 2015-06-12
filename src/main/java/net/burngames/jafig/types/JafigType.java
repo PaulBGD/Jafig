@@ -39,8 +39,10 @@ public class JafigType {
     public static final Class<? extends Jafig> JSON = JafigJSON.class;
 
     // Binary
+    @Deprecated
     public static final Class<? extends Jafig> BINARY_ORIGINAL = JafigBinary.class;
 
     // Misc
+    @Deprecated
     public static final Class<JafigObject> OBJECT = JafigObject.class;
 }
